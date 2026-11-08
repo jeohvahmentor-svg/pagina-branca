@@ -1,0 +1,63 @@
+name: "🎨 Submit a preset (designed voice)"
+description: Share a designed voice defined by taxonomy tokens (no audio).
+title: "[preset] "
+labels: ["submission", "preset"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for contributing! A **preset** is a designed voice — just a
+        validated `instruct` string, no audio.
+        **Rule:** no cloning identifiable real people without consent.
+  - type: input
+    id: name
+    attributes:
+      label: Voice name
+      placeholder: "Calm Evening Narrator"
+    validations:
+      required: true
+  - type: dropdown
+    id: use_case
+    attributes:
+      label: Use case
+      options: [narration, conversational, characters, social, entertainment, advertisement, informative]
+    validations:
+      required: true
+  - type: input
+    id: instruct
+    attributes:
+      label: Instruct (taxonomy tokens only)
+      description: "e.g. female, middle-aged, low pitch, british accent"
+    validations:
+      required: true
+  # Same free-text field as the voice form, same failure available to it: a
+  # licence a maintainer cannot act on. Kept in lockstep with that form.
+  - type: dropdown
+    id: license
+    attributes:
+      label: License
+      description: The licence you are granting for this preset. You must have the right to grant it.
+      options:
+        - CC-BY-4.0 (credit required)
+        - CC-BY-SA-4.0 (credit required, share-alike)
+        - CC0-1.0 (public domain dedication)
+        - OpenRAIL-M
+        - Other (name it in "Anything else" below)
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything else
+      description: Notes for the maintainer, and your licence name if you chose "Other".
+    validations:
+      required: false
+  - type: checkboxes
+    id: consent
+    attributes:
+      label: Confirmation
+      options:
+        - label: This voice does not imitate an identifiable real person without their consent.
+          required: true
+        - label: I have the right to license this contribution.
+          required: true
