@@ -223,3 +223,13 @@
   .loto-modal-actions { flex-wrap:wrap; }
   .loto-footer { flex-direction:column; }
 }
+
+/* Sincronização opcional dos resultados públicos da Caixa */
+.loto-sync-error { display:flex; align-items:center; gap:9px; border:1px solid oklch(0.65 0.12 30 / 45%); margin:0 0 18px; }
+.loto-sync-error button { margin-left:auto; padding:4px; background:transparent; border:0; color:inherit; }
+.loto-rotating { animation:loto-rotate 1s linear infinite; }
+@keyframes loto-rotate { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
+@media(max-width:560px) {
+  .loto-top-actions { gap:7px; }
+  .loto-top-actions .loto-outline-button { padding:9px; }
+}

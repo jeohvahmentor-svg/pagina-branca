@@ -1,7 +1,7 @@
 /** Motor estatístico independente. Nenhum algoritmo aqui promete previsão de sorteios. */
 export type LotteryId = "megasena" | "lotofacil";
 export type Draw = { contest: number; numbers: number[]; date?: string };
-export type HistorySource = "demo" | "imported";
+export type HistorySource = "demo" | "imported" | "caixa";
 export type LotteryConfig = {
   id: LotteryId;
   title: string;

@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from "react";
 import {
   Activity, ArrowRight, BarChart3, Bot, CheckCircle2, ChevronDown, CircleHelp,
   Crown, Database, FlaskConical, LayoutDashboard, Megaphone, Menu, Plus,
-  RotateCcw, ShieldCheck, Shuffle, Sparkles, Target, Upload, X,
+  RotateCcw, ShieldCheck, Shuffle, Sparkles, Target, Upload, RefreshCw, X,
 } from "lucide-react";
 import {
   Bar, BarChart, CartesianGrid, Cell, ReferenceLine, ResponsiveContainer,
@@ -12,6 +12,7 @@ import {
   calculateStats, combinations, jackpotChance, LOTTERIES, parseHistory,
   randomTicket, simulatedHistory, type Draw, type HistorySource, type LotteryId,
 } from "../lib/loto-intelligence";
+import { getCaixaResults } from "../lib/caixa-results.functions";
 import "./loto-dashboard.css";
 
 type View = "overview" | "patterns" | "simulator" | "jarvis" | "plans";
@@ -38,6 +39,8 @@ export default function LotoDashboard() {
   const [input, setInput] = useState("");
   const [importError, setImportError] = useState("");
   const [importSuccess, setImportSuccess] = useState("");
+  const [loadingCaixa, setLoadingCaixa] = useState(false);
+  const [syncError, setSyncError] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
   const [ticket, setTicket] = useState<number[]>([]);
   const [saved, setSaved] = useState<Record<LotteryId, number[][]>>({ lotofacil: [], megasena: [] });
@@ -50,6 +53,7 @@ export default function LotoDashboard() {
   const minDraw = stats.draws > 0 ? Math.min(...current.draws.map((d) => d.contest)) : 0;
   const maxDraw = stats.last?.contest ?? 0;
   const isDemo = current.source === "demo";
+  const isCaixa = current.source === "caixa";
 
   const changeLottery = (next: LotteryId) => {
     setLottery(next);
@@ -67,6 +71,21 @@ export default function LotoDashboard() {
       setView("overview");
     } catch (error) {
       setImportError(error instanceof Error ? error.message : "Erro ao importar histórico.");
+    }
+  };
+  const syncCaixa = async () => {
+    const selected = lottery;
+    setLoadingCaixa(true);
+    setSyncError("");
+    try {
+      const result = await getCaixaResults({ data: { lottery: selected, limit: 20 } });
+      setDatasets((prev) => ({ ...prev, [selected]: { source: "caixa", draws: result.draws } }));
+      setImportSuccess(`Caixa: ${result.draws.length} resultados confirmados até o concurso ${result.latestContest} (${result.latestDate}). Consultados em ${new Date(result.checkedAt).toLocaleString("pt-BR")}.`);
+      setView("overview");
+    } catch (error) {
+      setSyncError(error instanceof Error ? error.message : "Não foi possível consultar a Caixa.");
+    } finally {
+      setLoadingCaixa(false);
     }
   };
   const restoreDemo = () => {
@@ -129,7 +148,8 @@ export default function LotoDashboard() {
             <div className="loto-breadcrumb">Loto Intelligence <span>/</span> <strong>{nav.find((n) => n.id === view)?.label}</strong></div>
           </div>
           <div className="loto-top-actions">
-            <span className="loto-mode-tag"><span className="loto-dot"/>{isDemo ? "Dados simulados" : "Dados importados"}</span>
+            <span className="loto-mode-tag"><span className="loto-dot"/>{isDemo ? "Dados simulados" : isCaixa ? "Resultados Caixa" : "Dados importados"}</span>
+            <button className="loto-outline-button" onClick={syncCaixa} disabled={loadingCaixa}><RefreshCw size={16} className={loadingCaixa ? "loto-rotating" : ""}/><span>{loadingCaixa ? "Consultando Caixa..." : "Consultar Caixa"}</span></button>
             <button className="loto-outline-button" onClick={() => {setImportOpen(true);setImportError("");}}><Upload size={16}/><span>Importar histórico</span></button>
           </div>
         </header>
@@ -144,9 +164,10 @@ export default function LotoDashboard() {
           </div>
           <div className={`loto-notice ${isDemo ? "loto-notice-demo" : ""}`}>
             <CircleHelp size={17}/>
-            <span>{isDemo ? "Demonstração com 120 sorteios sintéticos. NÃO são concursos reais da Caixa. Importe resultados para obter estatísticas históricas." : "Histórico fornecido pelo usuário, sem validação automática junto à Caixa. Padrões passados não demonstram capacidade de prever sorteios futuros."}</span>
+            <span>{isDemo ? "Demonstração com 120 sorteios sintéticos, NÃO são concursos reais. Clique em Consultar Caixa para carregar 20 concursos recentes." : isCaixa ? "Dados obtidos diretamente do serviço de resultados da Caixa para os últimos 20 concursos. A análise não prevê sorteios futuros." : "Histórico fornecido pelo usuário, sem validação automática junto à Caixa. Padrões passados não demonstram capacidade de prever sorteios futuros."}</span>
             {isDemo && <button onClick={() => setImportOpen(true)}>Importar dados <ArrowRight size={13}/></button>}
           </div>
+          {syncError && <div className="loto-import-error loto-sync-error"><CircleHelp size={17}/>{syncError}<button aria-label="Dispensar erro" onClick={() => setSyncError("")}><X size={15}/></button></div>}
           {importSuccess && <div className="loto-success"><CheckCircle2 size={17}/>{importSuccess}<button aria-label="Dispensar aviso" onClick={() => setImportSuccess("")}><X size={15}/></button></div>}
 
           {view === "overview" && <>
@@ -163,7 +184,7 @@ export default function LotoDashboard() {
                 <div className="loto-legend"><span><i className="loto-legend-accent"/>Ocorrências</span><span><i className="loto-legend-muted"/>Média teórica</span></div>
               </section>
               <section className="loto-panel">
-                <div className="loto-panel-heading"><div><span className="loto-panel-kicker">ÚLTIMO REGISTRO</span><h2>{isDemo ? "Extração simulada" : `Concurso nº ${maxDraw}`}</h2><p>{isDemo ? "Dados sintéticos, apenas para explorar a interface" : stats.last?.date || "Sem data informada"}</p></div><span className="loto-status">{isDemo ? "DEMO" : "IMPORTADO"}</span></div>
+                <div className="loto-panel-heading"><div><span className="loto-panel-kicker">ÚLTIMO REGISTRO</span><h2>{isDemo ? "Extração simulada" : `Concurso nº ${maxDraw}`}</h2><p>{isDemo ? "Dados sintéticos, apenas para explorar a interface" : stats.last?.date || "Sem data informada"}</p></div><span className="loto-status">{isDemo ? "DEMO" : isCaixa ? "CAIXA" : "IMPORTADO"}</span></div>
                 <div className="loto-balls">{stats.last?.numbers.map((n) => <span className="loto-ball" key={n}>{ball(n)}</span>)}</div>
                 <div className="loto-divider"/>
                 <div className="loto-metric-line"><span>Probabilidade do prêmio máximo</span><strong>1 em {fmt(totalComb)}</strong></div>

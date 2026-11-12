@@ -17,7 +17,7 @@ Plataforma independente de análise estatística de loterias, construída do zer
 | Recurso | Status |
 | --- | --- |
 | Interface, estatísticas e importação | Implementação frontend inicial |
-| Dados oficiais em atualização automática | Não implementado |
+| Consulta de concursos recentes da Caixa | Integração somente leitura via função de servidor, com botão manual (últimos 20 concursos); depende da disponibilidade do serviço |\n| Sincronização incremental permanente de todo o histórico | Ainda não implementada |
 | Backend e persistência na VPS | Não implementado |
 | Autenticação, assinatura, cobrança | Não implementado |
 | Machine learning, backtesting e modelos preditivos | Não implementado |
@@ -27,7 +27,7 @@ Plataforma independente de análise estatística de loterias, construída do zer
 
 **Atenção:** dados importados pelo usuário não são certificados pela Caixa. Os dados de demo são *sintéticos* e não devem ser divulgados como histórico real. Estatísticas passadas não demonstram previsibilidade de extrações independentes e justas.
 
-## Como desenvolver
+## Consulta de resultados da Caixa\n\nUse o botão **Consultar Caixa** no topo da plataforma (Mega-Sena e Lotofácil). A aplicação busca no servidor os 20 concursos mais recentes usando o endpoint público `https://servicebus2.caixa.gov.br/portaldeloterias/api/{modalidade}/{numero}`, valida os números recebidos e marca a origem como **Caixa**. O resultado é armazenado na memória do servidor durante 15 minutos para reduzir requisições repetidas. Se a Caixa falhar, o dashboard não substitui os dados existentes por dados parciais; apresenta erro e mantém a importação manual como alternativa.\n\nEsta fase **não** mantém histórico completo persistido na nuvem, e uma consulta ao serviço público pode falhar temporariamente ou sofrer bloqueios. Antes do lançamento comercial, recomendamos banco de dados próprio, busca incremental auditável, verificação de concursos ausentes, fonte alternativa oficial para reconciliação e controles de carga e monitoramento.\n\n## Como desenvolver
 
 ```bash
 npm install
@@ -56,7 +56,7 @@ Arquiteturas públicas estudadas:
 Para operar REA localmente com um projeto que você tem permissão de inspecionar, siga o [README oficial](https://github.com/morluto/rea) e rode `npx rea-agents setup` no seu computador, fora do repositório-alvo, após revisar o instalador. REA será útil futuramente em inspeções autorizadas de aplicativos sem código-fonte.
 
 ## Próximas fases
-1. Fontes verificáveis da Caixa, importação robusta e trilha de integridade de dados.
+1. Importação completa, persistência incremental e trilha de integridade de resultados da Caixa.
 2. Backend Python/FastAPI na VPS, autenticação, isolamentos e banco PostgreSQL.
 3. Laboratório de backtesting cronológico rigoroso com baseline aleatório e orçamento equivalente.
 4. Jarvis LLM com consultas ao motor estatístico, limites de uso e custo.
